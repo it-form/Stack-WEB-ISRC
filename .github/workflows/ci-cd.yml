@@ -21,7 +21,7 @@ jobs:
       - name: Test PHP
         run: |
           echo "Test du conteneur PHP"
-          docker exec $(docker ps -qf "name=php") php -v
+          docker exec $(docker ps -qf "name=web") php -v
 
       - name: Test Nginx
         run: |
