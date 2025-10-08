@@ -1,0 +1,52 @@
+# --- SUITE --- Opération de déploiement sur le serveur
+name: CD - Déploiement LAMP Project
+
+# Déclenche le workflow après la fin du workflow CI/CD
+on:
+  workflow_run:
+    workflows: ["CI/CD - LAMP Project"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    name: Déploiement vers VPS
+    runs-on: ubuntu-latest
+
+    # Exécute seulement si le workflow CI/CD a réussi
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      # 1️⃣ Récupération du code source
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      # 2️⃣ Déploiement via SSH
+      - name: Déploiement sur le VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            echo "Connexion au VPS"
+            cd ~/lamp-nginx-preprod || mkdir -p ~/lamp-nginx-preprod && cd ~/lamp-nginx-preprod
+
+            echo "Nettoyage du projet existant"
+            rm -rf lamp-nginx-project
+            mkdir lamp-nginx-project
+            cd lamp-nginx-project
+
+            echo "Clonage du dépôt GitHub"
+            git clone https://github.com/${{ github.repository }} .
+            git checkout main
+
+            echo "Arrêt des conteneurs Docker existants"
+            docker compose down || true
+
+            echo "Construction et démarrage des conteneurs"
+            docker compose up -d --build
+
+            echo "Déploiement terminé ✅"
