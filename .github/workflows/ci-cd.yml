@@ -16,7 +16,7 @@ jobs:
 
 
       - name: Environnement Docker
-        run: docker-compose up -d --build
+        run: docker compose up -d --build
 
       - name: Test PHP
         run: |
@@ -28,4 +28,4 @@ jobs:
           docker exec $(docker ps -qf "name=nginx") nginx -t
 
       - name: Arrêt des conteneurs
-        run: docker-compose down
+        run: docker compose down
