@@ -1,0 +1,15 @@
+name: CI/CD - LAMP Project
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build-test:
+    name: Construction des containers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name:  Récupération du code source
+        uses: actions/checkout@v4
