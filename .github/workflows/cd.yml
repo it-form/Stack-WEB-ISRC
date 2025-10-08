@@ -1,0 +1,37 @@
+# --- SUITE --- Opération de déploiement sur le serveur
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  deploy:
+    name: Déploiement vers VPS
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Déploiement via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            cd ~/lamp-nginx-preprod
+
+            rm -rf lamp-nginx-project
+            mkdir lamp-nginx-project
+            cd lamp-nginx-project
+
+            git clone https://github.com/${{ github.repository }} .
+            git checkout main
+
+            docker compose down || true
+            docker compose up -d --build
