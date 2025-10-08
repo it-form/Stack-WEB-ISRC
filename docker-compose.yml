@@ -24,7 +24,8 @@ services:
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./web:/var/www/html
-   ports:
-     - 80:80
-   volumes:
-     db_data:
+    ports:
+      - 80:80
+
+  volumes:
+    db_data:
