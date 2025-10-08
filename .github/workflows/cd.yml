@@ -1,21 +1,28 @@
 # --- SUITE --- Opération de déploiement sur le serveur
+name: CD - Déploiement LAMP Project
+
+# Déclenche le workflow après la fin du workflow CI/CD
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["CI/CD - LAMP Project"]
+    types:
+      - completed
+
 jobs:
   deploy:
     name: Déploiement vers VPS
     runs-on: ubuntu-latest
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
+
+    # Exécute seulement si le workflow CI/CD a réussi
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: Récupération du code
+      # 1️⃣ Récupération du code source
+      - name: Checkout du dépôt
         uses: actions/checkout@v4
 
-      - name: Déploiement via SSH
+      # 2️⃣ Déploiement via SSH
+      - name: Déploiement sur le VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -24,14 +31,22 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            cd ~/lamp-nginx-preprod
+            echo "Connexion au VPS"
+            cd ~/lamp-nginx-preprod || mkdir -p ~/lamp-nginx-preprod && cd ~/lamp-nginx-preprod
 
+            echo "Nettoyage du projet existant"
             rm -rf lamp-nginx-project
             mkdir lamp-nginx-project
             cd lamp-nginx-project
 
+            echo "Clonage du dépôt GitHub"
             git clone https://github.com/${{ github.repository }} .
             git checkout main
 
+            echo "Arrêt des conteneurs Docker existants"
             docker compose down || true
+
+            echo "Construction et démarrage des conteneurs"
             docker compose up -d --build
+
+            echo "Déploiement terminé ✅"
